@@ -30,7 +30,7 @@ pub struct Universe {
 
 impl Universe {
     fn get_index(&self, row: u32, column: u32) -> usize {
-        (row * self.width + column) as usize
+        ((row % self.height) * self.width + (column % self.width)) as usize
     }
 
     fn live_neightbor_count(&self, row: u32, column: u32) -> u8 {
@@ -107,6 +107,10 @@ impl Universe {
         };
 
         universe.generate_pattern(SpaceShip::new(), 0, 0);
+        universe.generate_pattern(SpaceShip::new(), 53, 19);
+        universe.generate_pattern(SpaceShip::new(), 28, 38);
+        universe.generate_pattern(SpaceShip::new(), 23, 53);
+        universe.generate_pattern(SpaceShip::new(), 29, 58);
 
         universe
     }
