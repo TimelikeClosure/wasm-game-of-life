@@ -2,6 +2,8 @@ mod patterns;
 mod utils;
 
 use patterns::space_ship::SpaceShip;
+use patterns::glider::Glider;
+use patterns::f_pent::FPentomino;
 use patterns::Pattern;
 use std::fmt;
 use wasm_bindgen::prelude::*;
@@ -106,11 +108,27 @@ impl Universe {
             next,
         };
 
-        universe.generate_pattern(SpaceShip::new(), 0, 0);
-        universe.generate_pattern(SpaceShip::new(), 53, 19);
-        universe.generate_pattern(SpaceShip::new(), 28, 38);
-        universe.generate_pattern(SpaceShip::new(), 23, 53);
-        universe.generate_pattern(SpaceShip::new(), 29, 58);
+        for (x, y) in [
+            (0, 0),
+            (24, 8),
+            (48, 16),
+            (8, 24),
+            (32, 32),
+            (56, 40),
+            (16, 48),
+            (40, 56),
+        ].iter() { universe.generate_pattern(SpaceShip::new(), *x, *y) }
+
+        for (x, y) in [
+            (40, 0),
+            (0, 8),
+            (24, 16),
+            (48, 24),
+            (8, 32),
+            (32, 40),
+            (56, 48),
+            (16, 56),
+        ].iter() { universe.generate_pattern(Glider::new(), *x, *y) }
 
         universe
     }
