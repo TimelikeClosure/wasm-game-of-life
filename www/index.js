@@ -75,10 +75,10 @@ const defineRenderLoop = (source, ctx) => {
     };
 
     const renderLoop = () => {
-        source.tick();
-
         drawGrid();
         drawCells();
+
+        source.tick();
 
         requestAnimationFrame(renderLoop);
     }
