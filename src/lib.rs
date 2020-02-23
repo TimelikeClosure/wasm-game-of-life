@@ -1,5 +1,8 @@
+mod patterns;
 mod utils;
 
+use patterns::space_ship::SpaceShip;
+use patterns::Pattern;
 use std::fmt;
 use wasm_bindgen::prelude::*;
 
@@ -46,6 +49,15 @@ impl Universe {
         }
         count
     }
+
+    fn generate_pattern(&mut self, pattern: Pattern, x_base: u32, y_base: u32) {
+        for pattern_cell in pattern.cells {
+            let x = x_base + pattern_cell.x;
+            let y = y_base + pattern_cell.y;
+            let index = self.get_index(y, x);
+            self.cells[index] = pattern_cell.cell;
+        }
+    }
 }
 
 impl fmt::Display for Universe {
@@ -71,24 +83,32 @@ impl Universe {
         let width = 64;
         let height = 64;
 
+        // let cells = (0..height * width)
+        //     .map(|index| {
+        //         if index % 2 == 0 || index % 7 == 0 {
+        //             Cell::Alive
+        //         } else {
+        //             Cell::Dead
+        //         }
+        //     })
+        //     .collect::<Vec<Cell>>();
+
         let cells = (0..height * width)
-            .map(|index| {
-                if index % 2 == 0 || index % 7 == 0 {
-                    Cell::Alive
-                } else {
-                    Cell::Dead
-                }
-            })
+            .map(|_| Cell::Dead)
             .collect::<Vec<Cell>>();
 
         let next = cells.clone();
 
-        Universe {
+        let mut universe = Universe {
             width,
             height,
             cells,
             next,
-        }
+        };
+
+        universe.generate_pattern(SpaceShip::new(), 0, 0);
+
+        universe
     }
 
     pub fn render(&self) -> String {
