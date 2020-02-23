@@ -116,4 +116,16 @@ impl Universe {
 
         std::mem::swap(&mut self.cells, &mut self.next);
     }
+
+    pub fn width(&self) -> u32 {
+        self.width
+    }
+
+    pub fn height(&self) -> u32 {
+        self.height
+    }
+
+    pub fn cells(&self) -> *const Cell {
+        self.cells.as_ptr()
+    }
 }
