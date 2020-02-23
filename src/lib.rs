@@ -85,17 +85,14 @@ impl Universe {
         let width = 64;
         let height = 64;
 
-        // let cells = (0..height * width)
-        //     .map(|index| {
-        //         if index % 2 == 0 || index % 7 == 0 {
-        //             Cell::Alive
-        //         } else {
-        //             Cell::Dead
-        //         }
-        //     })
-        //     .collect::<Vec<Cell>>();
-
         let cells = (0..height * width)
+            // .map(|index| {
+            //     if index % 2 == 0 || index % 7 == 0 {
+            //         Cell::Alive
+            //     } else {
+            //         Cell::Dead
+            //     }
+            // })
             .map(|_| Cell::Dead)
             .collect::<Vec<Cell>>();
 
