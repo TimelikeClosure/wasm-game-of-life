@@ -55,6 +55,9 @@ const defineRenderLoop = (source, ctx) => {
         const cellsPtr = source.cells();
         const cells = new Uint8Array(memory.buffer, cellsPtr, width * height);
 
+        const prevCellsPtr = source.prev();
+        const prevCells = new Uint8Array(memory.buffer, prevCellsPtr, width * height);
+
         // Initialize pen
         ctx.beginPath();
         ctx.moveTo(1, 1);
@@ -63,10 +66,14 @@ const defineRenderLoop = (source, ctx) => {
         for (let row = 0; row < height; row++){
             const y = row * (CELL_SIZE + 1) + 1;
             for (let column = 0; column < width; column++){
-                const cell = cells[getIndex(row, column)];
-                ctx.fillStyle = cell === Cell.Alive ? ALIVE_COLOR : DEAD_COLOR;
-                const x = column * (CELL_SIZE + 1) + 1;
-                ctx.fillRect(x, y, CELL_SIZE, CELL_SIZE)
+                const index = getIndex(row, column);
+                const cell = cells[index];
+                const prevCell = prevCells[index];
+                if (prevCell !== cell){
+                    ctx.fillStyle = cell === Cell.Alive ? ALIVE_COLOR : DEAD_COLOR;
+                    const x = column * (CELL_SIZE + 1) + 1;
+                    ctx.fillRect(x, y, CELL_SIZE, CELL_SIZE)
+                }
             }
         }
 

@@ -1,9 +1,9 @@
 mod patterns;
 mod utils;
 
-use patterns::space_ship::SpaceShip;
-use patterns::glider::Glider;
 use patterns::f_pent::FPentomino;
+use patterns::glider::Glider;
+use patterns::space_ship::SpaceShip;
 use patterns::Pattern;
 use std::fmt;
 use wasm_bindgen::prelude::*;
@@ -28,6 +28,7 @@ pub struct Universe {
     height: u32,
     cells: Vec<Cell>,
     next: Vec<Cell>,
+    direction_deltas: Box<[(u32, u32)]>,
 }
 
 impl Universe {
@@ -35,20 +36,15 @@ impl Universe {
         ((row % self.height) * self.width + (column % self.width)) as usize
     }
 
-    fn live_neightbor_count(&self, row: u32, column: u32) -> u8 {
+    fn live_neighbor_count(&self, row: u32, column: u32) -> u8 {
         let mut count = 0;
-        for delta_row in [self.height - 1, 0, 1].iter().cloned() {
-            for delta_column in [self.width - 1, 0, 1].iter().cloned() {
-                if delta_row == 0 && delta_column == 0 {
-                    continue;
-                }
-
-                let neighbor_row = (row + delta_row) % self.height;
-                let neighbor_column = (column + delta_column) % self.width;
-                let index = self.get_index(neighbor_row, neighbor_column);
-                count += self.cells[index] as u8;
-            }
+        for (delta_column, delta_row) in self.direction_deltas.iter() {
+            let neighbor_row = (row + delta_row) % self.height;
+            let neighbor_column = (column + delta_column) % self.width;
+            let index = self.get_index(neighbor_row, neighbor_column);
+            count += self.cells[index] as u8;
         }
+
         count
     }
 
@@ -96,13 +92,30 @@ impl Universe {
             .map(|_| Cell::Dead)
             .collect::<Vec<Cell>>();
 
-        let next = cells.clone();
+        let next = (0..height * width)
+            .map(|_| Cell::Dead)
+            .collect::<Vec<Cell>>();
+
+        let up = height - 1;
+        let left = width - 1;
+        let direction_deltas = vec![
+            (1, 0),
+            (1, 1),
+            (0, 1),
+            (left, 1),
+            (left, 0),
+            (left, up),
+            (0, up),
+            (1, up),
+        ]
+        .into_boxed_slice();
 
         let mut universe = Universe {
             width,
             height,
             cells,
             next,
+            direction_deltas,
         };
 
         for (x, y) in [
@@ -114,7 +127,11 @@ impl Universe {
             (56, 40),
             (16, 48),
             (40, 56),
-        ].iter() { universe.generate_pattern(SpaceShip::new(), *x, *y) }
+        ]
+        .iter()
+        {
+            universe.generate_pattern(SpaceShip::new(), *x, *y)
+        }
 
         for (x, y) in [
             (40, 0),
@@ -125,7 +142,11 @@ impl Universe {
             (32, 40),
             (56, 48),
             (16, 56),
-        ].iter() { universe.generate_pattern(Glider::new(), *x, *y) }
+        ]
+        .iter()
+        {
+            universe.generate_pattern(Glider::new(), *x, *y)
+        }
 
         universe
     }
@@ -135,13 +156,11 @@ impl Universe {
     }
 
     pub fn tick(&mut self) {
-        self.next = self.cells.clone();
-
         for row in 0..self.height {
             for column in 0..self.width {
                 let index = self.get_index(row, column);
                 let cell = self.cells[index];
-                let neighbors = self.live_neightbor_count(row, column);
+                let neighbors = self.live_neighbor_count(row, column);
 
                 let next_cell = match (cell, neighbors) {
                     (Cell::Dead, 3) => Cell::Alive,
@@ -166,5 +185,9 @@ impl Universe {
 
     pub fn cells(&self) -> *const Cell {
         self.cells.as_ptr()
+    }
+
+    pub fn prev(&self) -> *const Cell {
+        self.next.as_ptr()
     }
 }
