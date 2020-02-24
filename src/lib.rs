@@ -2,11 +2,9 @@ mod patterns;
 mod utils;
 
 use js_sys::Math::random;
-use patterns::f_pent::FPentomino;
 use patterns::glider::Glider;
 use patterns::space_ship::SpaceShip;
 use patterns::Pattern;
-use std::fmt;
 use wasm_bindgen::prelude::*;
 
 // When the `wee_alloc` feature is enabled, use `wee_alloc` as the global
@@ -24,11 +22,42 @@ pub enum Cell {
 }
 
 #[wasm_bindgen]
+pub struct CellGroup {
+    cells: u8,
+}
+
+impl CellGroup {
+    pub fn new() -> CellGroup {
+        CellGroup {
+            cells: 0,
+        }
+    }
+
+    pub fn get(&self, index: u8) -> Cell {
+        if index >= 8 {
+            panic!("Cannot get CellGroup index greater than 7");
+        }
+        if (self.cells >> index) & 1 == 1 {
+            Cell::Alive
+        } else {
+            Cell::Dead
+        }
+    }
+
+    pub fn set(&mut self, index: u8, value: Cell) {
+        if index >= 8 {
+            panic!("Cannot set CellGroup index greater than 7");
+        }
+        self.cells ^= (self.get(index) as u8 ^ value as u8) << index;
+    }
+}
+
+#[wasm_bindgen]
 pub struct Universe {
     width: u32,
     height: u32,
-    cells: Vec<Cell>,
-    next: Vec<Cell>,
+    cells: Vec<CellGroup>,
+    next: Vec<CellGroup>,
     direction_deltas: Box<[(u32, u32)]>,
 }
 
@@ -37,13 +66,31 @@ impl Universe {
         ((row % self.height) * self.width + (column % self.width)) as usize
     }
 
+    fn get_cell(&self, index: usize) -> Cell {
+        let group_index = index / 8;
+        let cell_index = (index - (group_index * 8)) as u8;
+        self.cells[group_index].get(cell_index)
+    }
+
+    fn set_cell(&mut self, index: usize, value: Cell) {
+        let group_index = index / 8;
+        let cell_index = (index - (group_index * 8)) as u8;
+        self.cells[group_index].set(cell_index, value);
+    }
+
+    fn set_next_cell(&mut self, index: usize, value: Cell) {
+        let group_index = index / 8;
+        let cell_index = (index - (group_index * 8)) as u8;
+        self.next[group_index].set(cell_index, value);
+    }
+
     fn live_neighbor_count(&self, row: u32, column: u32) -> u8 {
         let mut count = 0;
         for (delta_column, delta_row) in self.direction_deltas.iter() {
             let neighbor_row = (row + delta_row) % self.height;
             let neighbor_column = (column + delta_column) % self.width;
             let index = self.get_index(neighbor_row, neighbor_column);
-            count += self.cells[index] as u8;
+            count += (self.get_cell(index)) as u8;
         }
 
         count
@@ -54,25 +101,8 @@ impl Universe {
             let x = x_base + pattern_cell.x;
             let y = y_base + pattern_cell.y;
             let index = self.get_index(y, x);
-            self.cells[index] = pattern_cell.cell;
+            self.set_cell(index, pattern_cell.cell);
         }
-    }
-}
-
-impl fmt::Display for Universe {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        for line in self.cells.as_slice().chunks(self.width as usize) {
-            for &cell in line {
-                let symbol = match cell {
-                    Cell::Alive => '◼',
-                    Cell::Dead => '◻',
-                };
-                write!(f, "{}", symbol)?;
-            }
-            write!(f, "\n")?;
-        }
-
-        Ok(())
     }
 }
 
@@ -99,10 +129,22 @@ impl Universe {
             })
             // .map(|_| Cell::Dead)
             .collect::<Vec<Cell>>();
+        let cell_groups = cells.chunks(8)
+            .map(|chunk| {
+                let mut group = CellGroup::new();
+                for index in 0..8 {
+                    group.set(index, chunk[index as usize]);
+                }
+                group
+            })
+            .collect::<Vec<CellGroup>>();
+        let cells = cell_groups;
 
-        let next = (0..height * width)
-            .map(|_| Cell::Dead)
-            .collect::<Vec<Cell>>();
+        let next_size = height * width / 8 + if height * width % 8 > 0 { 1 } else { 0 };
+
+        let next = (0..next_size)
+            .map(|_| CellGroup::new())
+            .collect::<Vec<CellGroup>>();
 
         let up = height - 1;
         let left = width - 1;
@@ -159,15 +201,11 @@ impl Universe {
         universe
     }
 
-    pub fn render(&self) -> String {
-        self.to_string()
-    }
-
     pub fn tick(&mut self) {
         for row in 0..self.height {
             for column in 0..self.width {
                 let index = self.get_index(row, column);
-                let cell = self.cells[index];
+                let cell = self.get_cell(index);
                 let neighbors = self.live_neighbor_count(row, column);
 
                 let next_cell = match (cell, neighbors) {
@@ -176,7 +214,7 @@ impl Universe {
                     _ => Cell::Dead,
                 };
 
-                self.next[index] = next_cell;
+                self.set_next_cell(index, next_cell);
             }
         }
 
@@ -191,11 +229,11 @@ impl Universe {
         self.height
     }
 
-    pub fn cells(&self) -> *const Cell {
+    pub fn cells(&self) -> *const CellGroup {
         self.cells.as_ptr()
     }
 
-    pub fn prev(&self) -> *const Cell {
+    pub fn prev(&self) -> *const CellGroup {
         self.next.as_ptr()
     }
 }

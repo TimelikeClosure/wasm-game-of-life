@@ -1,4 +1,4 @@
-import { Universe, Cell } from "wasm-game-of-life";
+import { Universe } from "wasm-game-of-life";
 import { memory } from "wasm-game-of-life/wasm_game_of_life_bg";
 
 const CELL_SIZE = 10;
@@ -21,6 +21,10 @@ const ALIVE_COLOR = "#000000";
 // }
 
 const getIndex = (row, column) => row * width + column;
+
+const getGroupIndex = index => Math.floor(index / 8);
+
+const getCellIndex = index => index % 8;
 
 const defineRenderLoop = (source, ctx) => {
     const drawGrid = () => {
@@ -67,10 +71,10 @@ const defineRenderLoop = (source, ctx) => {
             const y = row * (CELL_SIZE + 1) + 1;
             for (let column = 0; column < width; column++){
                 const index = getIndex(row, column);
-                const cell = cells[index];
-                const prevCell = prevCells[index];
+                const cell = (cells[getGroupIndex(index)] >> getCellIndex(index)) & 1;
+                const prevCell = (prevCells[getGroupIndex(index)] >> getCellIndex(index)) & 1;
                 if (prevCell !== cell){
-                    ctx.fillStyle = cell === Cell.Alive ? ALIVE_COLOR : DEAD_COLOR;
+                    ctx.fillStyle = cell ? ALIVE_COLOR : DEAD_COLOR;
                     const x = column * (CELL_SIZE + 1) + 1;
                     ctx.fillRect(x, y, CELL_SIZE, CELL_SIZE)
                 }
