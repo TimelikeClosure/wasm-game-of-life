@@ -1,6 +1,7 @@
 mod patterns;
 mod utils;
 
+use js_sys::Math::random;
 use patterns::f_pent::FPentomino;
 use patterns::glider::Glider;
 use patterns::space_ship::SpaceShip;
@@ -89,7 +90,14 @@ impl Universe {
             //         Cell::Dead
             //     }
             // })
-            .map(|_| Cell::Dead)
+            .map(|_| {
+                if (random() * 2.) as u8 != 0 {
+                    Cell::Alive
+                } else {
+                    Cell::Dead
+                }
+            })
+            // .map(|_| Cell::Dead)
             .collect::<Vec<Cell>>();
 
         let next = (0..height * width)
