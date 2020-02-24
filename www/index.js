@@ -57,10 +57,10 @@ const defineRenderLoop = (source, ctx) => {
     const drawCells = () => {
         // Initialize source
         const cellsPtr = source.cells();
-        const cells = new Uint8Array(memory.buffer, cellsPtr, width * height);
+        const cells = new Uint8Array(memory.buffer, cellsPtr, Math.ceil(width * height / 8));
 
         const prevCellsPtr = source.prev();
-        const prevCells = new Uint8Array(memory.buffer, prevCellsPtr, width * height);
+        const prevCells = new Uint8Array(memory.buffer, prevCellsPtr, Math.ceil(width * height / 8));
 
         // Initialize pen
         ctx.beginPath();
