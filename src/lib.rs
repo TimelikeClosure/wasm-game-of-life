@@ -28,9 +28,7 @@ pub struct CellGroup {
 
 impl CellGroup {
     pub fn new() -> CellGroup {
-        CellGroup {
-            cells: 0,
-        }
+        CellGroup { cells: 0 }
     }
 
     pub fn get(&self, index: u8) -> Cell {
@@ -129,7 +127,8 @@ impl Universe {
             })
             // .map(|_| Cell::Dead)
             .collect::<Vec<Cell>>();
-        let cell_groups = cells.chunks(8)
+        let cell_groups = cells
+            .chunks(8)
             .map(|chunk| {
                 let mut group = CellGroup::new();
                 for index in 0..8 {
